@@ -23,6 +23,8 @@ class Overlays {
   static const menu = 'menu';
   static const hud = 'hud';
   static const gameOver = 'gameOver';
+  static const rotate = 'rotate';
+  static const all = [menu, hud, gameOver, rotate];
 }
 
 class HookGame extends FlameGame
@@ -55,8 +57,25 @@ class HookGame extends FlameGame
 
   bool get isPlaying => phase == GamePhase.playing;
 
-  double get surfaceY => size.y * GameConfig.surfaceFraction;
-  double get seabedY => size.y - GameConfig.seabedHeight;
+  /// True while a round is paused because the screen is in portrait.
+  bool pausedForRotation = false;
+
+  /// The game is made for landscape: taller than wide counts as portrait.
+  bool get isPortrait => size.y > size.x;
+
+  /// A round is running and not paused.
+  bool get canPlay => isPlaying && !pausedForRotation;
+
+  double get surfaceY => (size.y * GameConfig.skyFraction).clamp(
+    GameConfig.minSkyHeight,
+    GameConfig.maxSkyHeight,
+  );
+  double get seabedY =>
+      size.y -
+      (size.y * GameConfig.seabedFraction).clamp(
+        GameConfig.minSeabedHeight,
+        GameConfig.maxSeabedHeight,
+      );
   double get waterDepth => max(1, seabedY - surfaceY);
 
   /// Deepest point the hook can reach with the current line upgrade.
@@ -170,6 +189,20 @@ class HookGame extends FlameGame
 
   @override
   void update(double dt) {
+    // Pause the round while the phone is held in portrait, and resume
+    // automatically once it is turned to landscape.
+    final shouldPause = isPlaying && isPortrait;
+    if (shouldPause != pausedForRotation) {
+      pausedForRotation = shouldPause;
+      if (shouldPause) {
+        _keyDirection = 0;
+        overlays.add(Overlays.rotate, priority: 10);
+      } else {
+        overlays.remove(Overlays.rotate);
+      }
+    }
+    if (pausedForRotation) return; // Everything stays frozen.
+
     final step = min(dt, GameConfig.maxFrameTime);
     _time += step;
 
@@ -198,14 +231,14 @@ class HookGame extends FlameGame
   @override
   void onTapUp(TapUpEvent event) {
     // Aim the hook at the tap point (a sky tap drops straight down).
-    if (isPlaying) line.tapAt(event.localPosition);
+    if (canPlay) line.tapAt(event.localPosition);
   }
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
     super.onDragUpdate(event);
     // The boat stays put while the hook is out.
-    if (isPlaying && !line.isOut) {
+    if (canPlay && !line.isOut) {
       boat.moveBy(event.localDelta.x * GameConfig.dragSensitivity);
     }
   }
@@ -221,13 +254,13 @@ class HookGame extends FlameGame
     final right =
         keysPressed.contains(LogicalKeyboardKey.arrowRight) ||
         keysPressed.contains(LogicalKeyboardKey.keyD);
-    _keyDirection = isPlaying ? (right ? 1 : 0) - (left ? 1 : 0) : 0;
+    _keyDirection = canPlay ? (right ? 1 : 0) - (left ? 1 : 0) : 0;
     if (_keyDirection != 0) boat.targetX = boat.x;
 
     if (event is KeyDownEvent &&
         (event.logicalKey == LogicalKeyboardKey.space ||
             event.logicalKey == LogicalKeyboardKey.arrowDown)) {
-      if (isPlaying) line.tapAt(null); // Straight down.
+      if (canPlay) line.tapAt(null); // Straight down.
       return KeyEventResult.handled;
     }
     return (left || right) ? KeyEventResult.handled : KeyEventResult.ignored;

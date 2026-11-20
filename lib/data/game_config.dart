@@ -16,14 +16,36 @@ class GameConfig {
   static const double maxFrameTime = 0.05;
 
   // --------------------------------------------------------------- Layout
-  /// Water surface position as a fraction of the screen height.
-  static const double surfaceFraction = 0.2;
+  // The game is played in landscape. Sizes scale with the screen height but
+  // are clamped so a short phone screen still has room for the boat and HUD.
 
-  /// Height of the sandy sea floor in logical pixels.
-  static const double seabedHeight = 46;
+  /// Sky height (water surface position) as a fraction of the screen height.
+  static const double skyFraction = 0.24;
 
-  /// Max width of the game area (keeps it portrait-shaped on wide screens).
-  static const double maxGameWidth = 520;
+  /// Sky height limits in logical pixels. The minimum keeps the boat's rod
+  /// below the HUD badges on short landscape screens.
+  static const double minSkyHeight = 100;
+  static const double maxSkyHeight = 190;
+
+  /// Height of the sandy sea floor as a fraction of the screen height.
+  static const double seabedFraction = 0.1;
+  static const double minSeabedHeight = 28;
+  static const double maxSeabedHeight = 50;
+
+  /// Sun position: centered horizontally (between the coins badge on the
+  /// left and the timer badge on the right), part way down the sky.
+  static const double sunXFraction = 0.5;
+  static const double sunYFraction = 0.45;
+  static const double sunRadius = 15;
+  static const double sunGlowRadius = 21;
+
+  /// Max width of the game area (avoids extreme stretching on ultra-wide
+  /// monitors).
+  static const double maxGameWidth = 1600;
+
+  /// Overlay panel widths before they are scaled down to fit the screen.
+  static const double menuPanelWidthLandscape = 700;
+  static const double menuPanelWidthPortrait = 380;
 
   /// Water depth shown to the player, used only for the "m" labels in the shop.
   static const double waterDepthMeters = 60;
@@ -57,15 +79,18 @@ class GameConfig {
   static const double hookTravelSpeedMultiplier = 1.0;
 
   /// Furthest the hook can go sideways from the rod tip, in pixels.
-  static const double maxSidewaysReach = 160;
+  /// Wide enough to use a landscape screen.
+  static const double maxSidewaysReach = 360;
 
   /// Total line length = straight-down reach x this factor. Stops long
-  /// diagonal casts from going further than the line allows.
-  static const double lineLengthFactor = 1.15;
+  /// diagonal casts from going further than the line allows (this rounds
+  /// off the far corners of the reach). A longer line upgrade also lets
+  /// you cast further sideways.
+  static const double lineLengthFactor = 2.5;
 
   // ------------------------------------------------------------- Spawning
   /// Maximum creatures in the water at once.
-  static const int maxCreatures = 13;
+  static const int maxCreatures = 16;
 
   /// Seconds between spawns while below [maxCreatures].
   static const double spawnInterval = 0.55;

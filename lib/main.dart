@@ -9,7 +9,10 @@ import 'ui/overlays.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   final save = await SaveData.load();
   runApp(HookAndCatchApp(save: save));
 }
@@ -50,6 +53,7 @@ class _HookAndCatchAppState extends State<HookAndCatchApp> {
                 overlayBuilderMap: {
                   Overlays.menu: (context, game) => MainMenu(game: game),
                   Overlays.hud: (context, game) => Hud(game: game),
+                  Overlays.rotate: (context, game) => const RotateOverlay(),
                   Overlays.gameOver: (context, game) =>
                       GameOverMenu(game: game),
                 },

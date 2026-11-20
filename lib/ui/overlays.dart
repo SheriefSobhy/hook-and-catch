@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_config.dart';
 import '../game/hook_game.dart';
+import '../platform/landscape.dart';
 
 const _gold = Color(0xFFFFD23F);
 const _panel = Color(0xE6082A54);
@@ -82,6 +83,13 @@ class _Pill extends StatelessWidget {
   }
 }
 
+/// Starts a round. Pressing Play is a user tap, so the browser allows
+/// fullscreen and the landscape lock here.
+void _play(HookGame game) {
+  enterLandscapeFullscreen();
+  game.startRound();
+}
+
 /// Title screen with the shop and a Play button.
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key, required this.game});
@@ -91,33 +99,29 @@ class MainMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Screen(
-      children: [
-        const Text(
+      game: game,
+      header: const [
+        Text(
           'Hook & Catch',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 38,
+            fontSize: 34,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 6),
-        const Text(
+        SizedBox(height: 6),
+        Text(
           'Drag to move the boat. Tap the water to cast\n'
           'toward that spot, tap again to reel in.\n'
-          'Deeper fish pay more! '
-          'Avoid jellyfish: they cut your line.',
+          'Deeper fish pay more! Avoid jellyfish:\n'
+          'they cut your line.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.35),
         ),
-        const SizedBox(height: 14),
-        _Wallet(game: game),
-        const SizedBox(height: 12),
-        Shop(game: game),
-        const SizedBox(height: 16),
-        _BigButton(label: 'Play', onPressed: game.startRound),
       ],
+      button: _BigButton(label: 'Play', onPressed: () => _play(game)),
     );
   }
 }
@@ -131,86 +135,169 @@ class GameOverMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Screen(
-      children: [
+      game: game,
+      header: [
         const Text(
           "Time's up!",
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 34,
+            fontSize: 32,
             fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Text(
           'Score: ${game.roundCoins.value}',
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: _gold,
-            fontSize: 30,
+            fontSize: 28,
             fontWeight: FontWeight.w800,
           ),
         ),
         if (game.lastRoundWasBest)
           const Padding(
-            padding: EdgeInsets.only(top: 4),
+            padding: EdgeInsets.only(top: 2),
             child: Text(
               'New best score!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.lightGreenAccent,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        const SizedBox(height: 12),
-        _Wallet(game: game),
-        const SizedBox(height: 12),
-        Shop(game: game),
-        const SizedBox(height: 16),
-        _BigButton(label: 'Play again', onPressed: game.startRound),
       ],
+      button: _BigButton(label: 'Play again', onPressed: () => _play(game)),
     );
   }
 }
 
-class _Screen extends StatelessWidget {
-  const _Screen({required this.children});
+/// Shown while a round is paused because the phone is in portrait.
+class RotateOverlay extends StatelessWidget {
+  const RotateOverlay({super.key});
 
-  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) {
+    // AbsorbPointer stops taps from reaching the paused game underneath.
+    return AbsorbPointer(
+      child: Container(
+        color: const Color(0xF2041F45),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(24),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.screen_rotation, color: Colors.white, size: 72),
+            SizedBox(height: 16),
+            Text(
+              'Rotate your phone to play',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Menu panel. In landscape: info and button on the left, shop on the right.
+/// In portrait: one column. The panel is scaled down to fit the screen, so it
+/// never scrolls or overflows.
+class _Screen extends StatelessWidget {
+  const _Screen({
+    required this.game,
+    required this.header,
+    required this.button,
+  });
+
+  final HookGame game;
+  final List<Widget> header;
+  final Widget button;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0x66000814),
       child: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutBack,
-              builder: (context, t, child) => Opacity(
-                opacity: t.clamp(0.0, 1.0),
-                child: Transform.scale(scale: 0.85 + 0.15 * t, child: child),
-              ),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 420),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: _panel,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0x55FFFFFF)),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth > constraints.maxHeight;
+              final info = [
+                ...header,
+                const SizedBox(height: 12),
+                _Wallet(game: game),
+              ];
+              final content = wide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ...info,
+                              const SizedBox(height: 14),
+                              button,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(child: Shop(game: game)),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ...info,
+                        const SizedBox(height: 10),
+                        Shop(game: game),
+                        const SizedBox(height: 14),
+                        button,
+                      ],
+                    );
+
+              return Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutBack,
+                    builder: (context, t, child) => Opacity(
+                      opacity: t.clamp(0.0, 1.0),
+                      child: Transform.scale(
+                        scale: 0.85 + 0.15 * t,
+                        child: child,
+                      ),
+                    ),
+                    child: Container(
+                      width: wide
+                          ? GameConfig.menuPanelWidthLandscape
+                          : GameConfig.menuPanelWidthPortrait,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: _panel,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0x55FFFFFF)),
+                      ),
+                      child: content,
+                    ),
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: children,
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),

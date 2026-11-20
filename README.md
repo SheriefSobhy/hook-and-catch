@@ -7,6 +7,10 @@ Everything is drawn in code, with no image files.
 
 ## How to play
 
+The game is played in landscape. Pressing Play goes fullscreen and turns the
+screen sideways where the browser allows it (Android Chrome). On iPhone, turn
+the phone yourself; the round pauses while the phone is upright.
+
 - Drag left/right to move the boat (or use the arrow keys).
 - Tap the water to cast the hook toward that spot (up to the max reach).
   Tap the sky, or press Space, to drop it straight down. Tap again to reel it in.

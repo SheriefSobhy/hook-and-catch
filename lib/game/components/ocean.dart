@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 
+import '../../data/game_config.dart';
 import '../hook_game.dart';
 
 /// Sky, animated water surface, light rays, sea floor and swaying seaweed.
@@ -88,9 +89,20 @@ class Ocean extends Component with HasGameReference<HookGame> {
     // Sky and sun. The sun sits in the middle, below the HUD badges
     // (coins on the left, timer on the right) so it never touches them.
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, surface + 10), _skyPaint);
-    final sun = Offset(size.width * 0.5, surface * 0.5);
-    canvas.drawCircle(sun, 22, Paint()..color = const Color(0x55FFF59D));
-    canvas.drawCircle(sun, 15, Paint()..color = const Color(0xFFFFEE58));
+    final sun = Offset(
+      size.width * GameConfig.sunXFraction,
+      surface * GameConfig.sunYFraction,
+    );
+    canvas.drawCircle(
+      sun,
+      GameConfig.sunGlowRadius,
+      Paint()..color = const Color(0x55FFF59D),
+    );
+    canvas.drawCircle(
+      sun,
+      GameConfig.sunRadius,
+      Paint()..color = const Color(0xFFFFEE58),
+    );
 
     // Water with a wavy top edge.
     final water = Path()..moveTo(0, size.height);

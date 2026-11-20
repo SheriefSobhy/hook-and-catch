@@ -18,7 +18,7 @@ void main() {
   }
 
   Future<void> setUpGame(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(400, 800);
+    tester.view.physicalSize = const Size(800, 400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
@@ -28,7 +28,7 @@ void main() {
       GameWidget<HookGame>(
         game: game,
         overlayBuilderMap: {
-          for (final name in [Overlays.menu, Overlays.hud, Overlays.gameOver])
+          for (final name in Overlays.all)
             name: (_, _) => const SizedBox.shrink(),
         },
       ),
@@ -44,7 +44,7 @@ void main() {
     await setUpGame(tester);
     final startX = game.boat.x;
 
-    await tester.dragFrom(const Offset(200, 500), const Offset(-150, 0));
+    await tester.dragFrom(const Offset(400, 300), const Offset(-150, 0));
     await frames(tester, 90);
 
     expect(game.line.state, HookState.ready);
@@ -55,11 +55,11 @@ void main() {
     await setUpGame(tester);
     final tip = game.boat.rodTip.clone();
 
-    await tester.tapAt(Offset(tip.x + 80, 350));
+    await tester.tapAt(Offset(tip.x + 200, 180));
     await frames(tester, 5);
 
     expect(game.line.state, HookState.dropping);
-    expect(game.line.target.x, greaterThan(tip.x + 40));
+    expect(game.line.target.x, greaterThan(tip.x + 120));
     expect(game.line.target.y, greaterThan(game.surfaceY));
   });
 
@@ -67,12 +67,12 @@ void main() {
     tester,
   ) async {
     await setUpGame(tester);
-    await tester.tapAt(const Offset(300, 450));
+    await tester.tapAt(const Offset(600, 250));
     await frames(tester, 5);
     expect(game.line.isOut, isTrue);
     final x = game.boat.x;
 
-    await tester.dragFrom(const Offset(200, 600), const Offset(150, 0));
+    await tester.dragFrom(const Offset(300, 320), const Offset(150, 0));
     await frames(tester, 20);
 
     expect(game.line.isOut, isTrue);

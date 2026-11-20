@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 
 import '../../data/game_config.dart';
+import '../hook_aim.dart';
 import '../hook_game.dart';
 import 'creature.dart';
 
@@ -30,25 +31,53 @@ class FishingLine extends Component with HasGameReference<HookGame> {
   HookState state = HookState.ready;
   Vector2 hook = Vector2.zero();
   Creature? caught;
+
+  /// Where the hook is travelling to while [HookState.dropping].
+  Vector2 target = Vector2.zero();
   double _cutTimer = 0;
   double _bubbleTimer = 0;
   double _time = 0;
 
-  double get _restY => game.boat.rodTip.y + restLength;
+  /// True while the hook is away from the boat.
+  bool get isOut => state == HookState.dropping || state == HookState.reeling;
 
-  double get _dropSpeed => game.save.value(UpgradeType.hook);
+  double get _dropSpeed =>
+      game.save.value(UpgradeType.hook) * GameConfig.hookTravelSpeedMultiplier;
 
-  /// Called when the player taps.
-  void onTap() {
+  /// Called when the player taps. [point] is the tap position in the game,
+  /// or null to drop straight down (keyboard).
+  void tapAt(Vector2? point) {
     switch (state) {
       case HookState.ready:
+        final tip = game.boat.rodTip;
+        target = aimHookTarget(
+          tip: tip,
+          tap: point,
+          surfaceY: point == null ? 0 : game.waveHeightAt(point.x),
+          maxDepthY: game.maxHookY,
+        );
+        // The cast starts at the rod tip and goes straight to the target.
+        hook = tip.clone();
         state = HookState.dropping;
+        game.boat.stop();
       case HookState.dropping:
         state = HookState.reeling;
       case HookState.reeling:
       case HookState.cut:
         break;
     }
+  }
+
+  /// Moves the hook toward [goal] by at most [distance]. Returns true on
+  /// arrival.
+  bool _moveToward(Vector2 goal, double distance) {
+    final offset = goal - hook;
+    if (offset.length <= distance) {
+      hook.setFrom(goal);
+      return true;
+    }
+    hook.add(offset.normalized()..scale(distance));
+    return false;
   }
 
   /// Puts the hook back under the rod and lets go of any catch.
@@ -65,32 +94,24 @@ class FishingLine extends Component with HasGameReference<HookGame> {
   void update(double dt) {
     _time += dt;
     final tip = game.boat.rodTip;
-
-    // The hook swings back under the rod tip.
     final follow = min(1.0, dt * GameConfig.hookFollowStrength);
-    hook.x += (tip.x - hook.x) * follow;
 
     switch (state) {
       case HookState.ready:
-        hook.y = tip.y + restLength;
+        // Dangle under the rod tip, swinging after the boat.
+        hook.x += (tip.x - hook.x) * follow;
+        hook.y += (tip.y + restLength - hook.y) * follow;
       case HookState.dropping:
-        hook.y += _dropSpeed * dt;
-        if (hook.y >= game.maxHookY) {
-          hook.y = game.maxHookY;
-          state = HookState.reeling;
-        }
+        if (_moveToward(target, _dropSpeed * dt)) state = HookState.reeling;
       case HookState.reeling:
         var speed = _dropSpeed * GameConfig.reelSpeedMultiplier;
         if (caught?.type.kind == CreatureKind.boot) {
           speed *= GameConfig.bootReelSlowdown;
         }
-        hook.y -= speed * dt;
-        if (hook.y <= _restY) {
-          hook.y = _restY;
-          _land();
-        }
+        // Straight back along the line to the rod tip.
+        if (_moveToward(tip, speed * dt)) _land();
       case HookState.cut:
-        hook.y = tip.y + restLength;
+        hook = Vector2(tip.x, tip.y + restLength);
         _cutTimer -= dt;
         if (_cutTimer <= 0) state = HookState.ready;
     }
@@ -167,16 +188,9 @@ class FishingLine extends Component with HasGameReference<HookGame> {
       return;
     }
 
-    // Slight curve in the line when the hook swings sideways.
+    // Straight line from the rod tip to the hook.
     final end = hook.toOffset();
-    final mid = Offset(
-      (tip.x + end.dx) / 2 + (tip.x - end.dx) * 0.3,
-      (tip.y + end.dy) / 2,
-    );
-    final path = Path()
-      ..moveTo(tip.x, tip.y)
-      ..quadraticBezierTo(mid.dx, mid.dy, end.dx, end.dy);
-    canvas.drawPath(path, _linePaint);
+    canvas.drawLine(tip.toOffset(), end, _linePaint);
 
     // Hook: a small "J".
     final hookPath = Path()

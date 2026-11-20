@@ -104,8 +104,9 @@ class MainMenu extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         const Text(
-          'Drag to move the boat. Tap to drop the hook,\n'
-          'tap again to reel in. Deeper fish pay more!\n'
+          'Drag to move the boat. Tap the water to cast\n'
+          'toward that spot, tap again to reel in.\n'
+          'Deeper fish pay more! '
           'Avoid jellyfish: they cut your line.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),

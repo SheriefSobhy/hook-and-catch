@@ -85,18 +85,12 @@ class Ocean extends Component with HasGameReference<HookGame> {
     final surface = game.surfaceY;
     final seabed = game.seabedY;
 
-    // Sky and sun.
+    // Sky and sun. The sun sits in the middle, below the HUD badges
+    // (coins on the left, timer on the right) so it never touches them.
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, surface + 10), _skyPaint);
-    canvas.drawCircle(
-      Offset(size.width * 0.82, surface * 0.35),
-      22,
-      Paint()..color = const Color(0x55FFF59D),
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.82, surface * 0.35),
-      15,
-      Paint()..color = const Color(0xFFFFEE58),
-    );
+    final sun = Offset(size.width * 0.5, surface * 0.5);
+    canvas.drawCircle(sun, 22, Paint()..color = const Color(0x55FFF59D));
+    canvas.drawCircle(sun, 15, Paint()..color = const Color(0xFFFFEE58));
 
     // Water with a wavy top edge.
     final water = Path()..moveTo(0, size.height);

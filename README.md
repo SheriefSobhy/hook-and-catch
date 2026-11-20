@@ -8,7 +8,9 @@ Everything is drawn in code, with no image files.
 ## How to play
 
 - Drag left/right to move the boat (or use the arrow keys).
-- Tap (or press Space) to drop the hook. Tap again to reel it in.
+- Tap the water to cast the hook toward that spot (up to the max reach).
+  Tap the sky, or press Space, to drop it straight down. Tap again to reel it in.
+- The boat can't move while the hook is out.
 - The hook catches the first thing it touches. Deeper fish are rarer and worth more.
 - Watch out: old boots are worthless and heavy, and jellyfish cut your line.
 - Each round lasts 60 seconds. Spend coins on upgrades between rounds.

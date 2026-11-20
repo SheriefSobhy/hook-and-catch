@@ -173,7 +173,7 @@ class HookGame extends FlameGame
     final step = min(dt, GameConfig.maxFrameTime);
     _time += step;
 
-    if (_keyDirection != 0) {
+    if (_keyDirection != 0 && !line.isOut) {
       boat.moveBy(_keyDirection * save.value(UpgradeType.boat) * step);
     }
 
@@ -197,13 +197,15 @@ class HookGame extends FlameGame
 
   @override
   void onTapUp(TapUpEvent event) {
-    if (isPlaying) line.onTap();
+    // Aim the hook at the tap point (a sky tap drops straight down).
+    if (isPlaying) line.tapAt(event.localPosition);
   }
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
     super.onDragUpdate(event);
-    if (isPlaying) {
+    // The boat stays put while the hook is out.
+    if (isPlaying && !line.isOut) {
       boat.moveBy(event.localDelta.x * GameConfig.dragSensitivity);
     }
   }
@@ -225,7 +227,7 @@ class HookGame extends FlameGame
     if (event is KeyDownEvent &&
         (event.logicalKey == LogicalKeyboardKey.space ||
             event.logicalKey == LogicalKeyboardKey.arrowDown)) {
-      if (isPlaying) line.onTap();
+      if (isPlaying) line.tapAt(null); // Straight down.
       return KeyEventResult.handled;
     }
     return (left || right) ? KeyEventResult.handled : KeyEventResult.ignored;

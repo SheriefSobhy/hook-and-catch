@@ -36,6 +36,9 @@ class Boat extends Component with HasGameReference<HookGame> {
     _placed = true;
   }
 
+  /// Stops gliding (used when the hook goes out).
+  void stop() => targetX = x;
+
   void moveBy(double dx) {
     targetX = (targetX + dx).clamp(minX, maxX);
   }

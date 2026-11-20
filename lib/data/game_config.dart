@@ -52,6 +52,17 @@ class GameConfig {
   /// How quickly the hook swings back under the boat (higher = stiffer).
   static const double hookFollowStrength = 6;
 
+  /// Hook travel speed along its path, as a multiple of the "Faster Hook"
+  /// upgrade value. 1.0 = same speed for angled and straight drops.
+  static const double hookTravelSpeedMultiplier = 1.0;
+
+  /// Furthest the hook can go sideways from the rod tip, in pixels.
+  static const double maxSidewaysReach = 160;
+
+  /// Total line length = straight-down reach x this factor. Stops long
+  /// diagonal casts from going further than the line allows.
+  static const double lineLengthFactor = 1.15;
+
   // ------------------------------------------------------------- Spawning
   /// Maximum creatures in the water at once.
   static const int maxCreatures = 13;
